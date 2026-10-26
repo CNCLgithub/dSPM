@@ -1,0 +1,113 @@
+{
+    "_schemaVersion": "1.0.0",
+    
+    "dspm_reservoir": {
+        "inputs": [
+            {"name": "n_neurons", "kind": "namevalue", "type": "numeric", "purpose": "Number of reservoir neurons"},
+            {"name": "n_recurrent_inputs", "kind": "namevalue", "type": "numeric", "purpose": "Dimension of feedback input channel (becomes autonomous after compilation)"},
+            {"name": "n_external_inputs", "kind": "namevalue", "type": "numeric", "purpose": "Dimension of exogenous input channel (external forcing)"},
+            {"name": "n_recurrent_outputs", "kind": "namevalue", "type": "numeric", "purpose": "Dimension of feedback output (default: n_recurrent_inputs)"},
+            {"name": "n_external_outputs", "kind": "namevalue", "type": "numeric", "purpose": "Dimension of observation output"},
+            {"name": "gamma", "kind": "namevalue", "type": "numeric", "purpose": "Time constant (τ = 1/γ is decay time)"},
+            {"name": "dt", "kind": "namevalue", "type": "numeric", "purpose": "Integration time step"},
+            {"name": "integrator", "kind": "namevalue", "type": "choices={'euler','rk4'}", "purpose": "Numerical integration method"},
+            {"name": "B_scale", "kind": "namevalue", "type": "numeric", "purpose": "Scale factor for random read-in matrices"},
+            {"name": "B_sparsity", "kind": "namevalue", "type": "numeric", "purpose": "Sparsity fraction [0,1] for read-in matrices"},
+            {"name": "r_star", "kind": "namevalue", "type": "numeric", "purpose": "Operating point (default: random in [-0.5, 0.5])"},
+            {"name": "x_star", "kind": "namevalue", "type": "numeric", "purpose": "Input expansion point (default: zeros)"},
+            {"name": "random_seed", "kind": "namevalue", "type": "numeric", "purpose": "RNG seed for reproducibility (0 = use current state)"},
+            {"name": "jet_order", "kind": "namevalue", "type": "numeric", "purpose": "Order of time derivatives in basis (1=static, 2=x+ẋ, ...)"},
+            {"name": "decompilation_order", "kind": "namevalue", "type": "numeric", "purpose": "Maximum polynomial degree in basis"},
+            {"name": "read_in_matrix", "kind": "namevalue", "type": "numeric", "purpose": "Custom B matrix (bypasses random initialization)"},
+            {"name": "read_out_matrix", "kind": "namevalue", "type": "numeric", "purpose": "Custom W matrix"},
+            {"name": "initialize", "kind": "namevalue", "type": "logical", "purpose": "Auto-initialize and decompile on construction"},
+            {"name": "verbose", "kind": "namevalue", "type": "logical", "purpose": "Print status messages"}
+        ]
+    },
+    
+    "dspm_reservoir.load": {
+        "inputs": [
+            {"name": "filepath", "kind": "required", "type": "file=*.json", "purpose": "Path to JSON configuration file"},
+            {"name": "n_neurons", "kind": "namevalue", "type": "numeric", "purpose": "Override neuron count from file"},
+            {"name": "gamma", "kind": "namevalue", "type": "numeric", "purpose": "Override time constant"},
+            {"name": "dt", "kind": "namevalue", "type": "numeric", "purpose": "Override time step"},
+            {"name": "B_scale", "kind": "namevalue", "type": "numeric", "purpose": "Override B matrix scale"},
+            {"name": "B_sparsity", "kind": "namevalue", "type": "numeric", "purpose": "Override B matrix sparsity"},
+            {"name": "random_seed", "kind": "namevalue", "type": "numeric", "purpose": "Override random seed"},
+            {"name": "verbose", "kind": "namevalue", "type": "logical", "purpose": "Print status messages"}
+        ]
+    },
+    
+    "dspm_reservoir.fromStruct": {
+        "inputs": [
+            {"name": "config", "kind": "required", "type": "struct", "purpose": "Configuration struct (JSON schema format)"},
+            {"name": "n_neurons", "kind": "namevalue", "type": "numeric", "purpose": "Override neuron count"},
+            {"name": "n_recurrent_inputs", "kind": "namevalue", "type": "numeric", "purpose": "Override feedback dimension"},
+            {"name": "n_external_inputs", "kind": "namevalue", "type": "numeric", "purpose": "Override external input dimension"},
+            {"name": "gamma", "kind": "namevalue", "type": "numeric", "purpose": "Override time constant"},
+            {"name": "dt", "kind": "namevalue", "type": "numeric", "purpose": "Override time step"},
+            {"name": "verbose", "kind": "namevalue", "type": "logical", "purpose": "Print status messages"}
+        ]
+    },
+    
+    "dspm_reservoir>compile": {
+        "inputs": [
+            {"name": "obj", "kind": "required", "type": "dspm_reservoir"},
+            {"name": "P", "kind": "required", "type": "numeric", "purpose": "Program matrix (k_rec × n_monomials)"}
+        ]
+    },
+    
+    "dspm_reservoir>condition": {
+        "inputs": [
+            {"name": "obj", "kind": "required", "type": "dspm_reservoir"},
+            {"name": "y0", "kind": "required", "type": "numeric", "purpose": "Initial state for recurrent outputs"}
+        ]
+    },
+    
+    "dspm_reservoir>simulate": {
+        "inputs": [
+            {"name": "obj", "kind": "required", "type": "dspm_reservoir"},
+            {"name": "T_steps", "kind": "required", "type": "numeric", "purpose": "Number of time steps to simulate"},
+            {"name": "x_ext_traj", "kind": "ordered", "type": "numeric", "purpose": "External input trajectory (k_ext × T)"}
+        ]
+    },
+    
+    "dspm_reservoir>decompile": {
+        "inputs": [
+            {"name": "obj", "kind": "required", "type": "dspm_reservoir"}
+        ]
+    },
+    
+    "dspm_reservoir>close_loop": {
+        "inputs": [
+            {"name": "obj", "kind": "required", "type": "dspm_reservoir"}
+        ]
+    },
+    
+    "dspm_reservoir>render_program": {
+        "inputs": [
+            {"name": "obj", "kind": "required", "type": "dspm_reservoir"},
+            {"name": "Precision", "kind": "namevalue", "type": "numeric", "purpose": "Significant figures for coefficients"},
+            {"name": "Tolerance", "kind": "namevalue", "type": "numeric", "purpose": "Threshold below which coefficients are treated as zero"},
+            {"name": "Theme", "kind": "namevalue", "type": "choices={'light','dark'}", "purpose": "Color theme for rendering"},
+            {"name": "Title", "kind": "namevalue", "type": "char", "purpose": "Figure title"}
+        ]
+    },
+    
+    "dspm_reservoir>printBasis": {
+        "inputs": [
+            {"name": "obj", "kind": "required", "type": "dspm_reservoir"},
+            {"name": "maxRows", "kind": "ordered", "type": "numeric", "purpose": "Maximum rows to display (default: 20)"}
+        ]
+    },
+    
+    "dspm_reservoir>save": {
+        "inputs": [
+            {"name": "obj", "kind": "required", "type": "dspm_reservoir"},
+            {"name": "filepath", "kind": "required", "type": "file", "purpose": "Output JSON file path"},
+            {"name": "name", "kind": "namevalue", "type": "char", "purpose": "Network name in saved file"},
+            {"name": "description", "kind": "namevalue", "type": "char", "purpose": "Network description"},
+            {"name": "is_preset", "kind": "namevalue", "type": "logical", "purpose": "Mark as preset configuration"}
+        ]
+    }
+}

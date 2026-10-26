@@ -1,0 +1,202 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --eq-font-size: 1.25rem;
+  --eq-line-height: 2.5;
+  --eq-label-color: #64748b;
+  --eq-text-color: #1e293b;
+  --eq-bg-color: #ffffff;
+  --eq-divider-color: #e2e8f0;
+  --eq-accent-color: #3b82f6;
+}
+
+.dark {
+  --eq-label-color: #94a3b8;
+  --eq-text-color: #e2e8f0;
+  --eq-bg-color: #0f172a;
+  --eq-divider-color: #334155;
+  --eq-accent-color: #60a5fa;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+               'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--eq-bg-color);
+  color: var(--eq-text-color);
+}
+
+/* Equation container styling */
+.equation-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 1.5rem 2rem;
+}
+
+.equation-container.centered {
+  justify-content: center;
+  align-items: center;
+}
+
+/* Individual equation row */
+.equation-row {
+  display: flex;
+  align-items: baseline;
+  padding: 0.75rem 0;
+  gap: 1.5rem;
+  line-height: var(--eq-line-height);
+  border-bottom: 1px solid var(--eq-divider-color);
+}
+
+.equation-row:last-child {
+  border-bottom: none;
+}
+
+.equation-row.single {
+  border-bottom: none;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Equation label (number) */
+.equation-label {
+  color: var(--eq-label-color);
+  font-size: 0.9em;
+  min-width: 2.5rem;
+  text-align: right;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+/* Equation content - default left alignment */
+.equation-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Override KaTeX's default centering for display mode */
+.equation-content .katex-display {
+  display: block !important;
+  text-align: left !important;
+  margin: 0 !important;
+}
+
+.equation-content .katex-display > .katex {
+  text-align: left !important;
+}
+
+.equation-content .katex {
+  font-size: var(--eq-font-size);
+}
+
+/* Multi-line equation block */
+.equation-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.equation-block .equation-line {
+  display: block;
+}
+
+/* Alignment variations - Center */
+.equation-row.align-center .equation-content {
+  align-items: center;
+}
+
+.equation-row.align-center .equation-content .katex-display {
+  text-align: center !important;
+}
+
+.equation-row.align-center .equation-content .katex-display > .katex {
+  text-align: center !important;
+}
+
+.equation-row.align-center .equation-block {
+  align-items: center;
+}
+
+/* Alignment variations - Right */
+.equation-row.align-right .equation-content {
+  align-items: flex-end;
+}
+
+.equation-row.align-right .equation-content .katex-display {
+  text-align: right !important;
+}
+
+.equation-row.align-right .equation-content .katex-display > .katex {
+  text-align: right !important;
+}
+
+.equation-row.align-right .equation-block {
+  align-items: flex-end;
+}
+
+/* Title styling */
+.equation-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--eq-text-color);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.equation-title .katex {
+  font-size: 1.5rem;
+}
+
+/* Error state */
+.equation-error {
+  color: #ef4444;
+  font-style: italic;
+  font-size: 0.9em;
+}
+
+/* Animation for smooth rendering */
+.equation-row {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar styling */
+.equation-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.equation-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.equation-container::-webkit-scrollbar-thumb {
+  background-color: var(--eq-divider-color);
+  border-radius: 4px;
+}
+
+.equation-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--eq-label-color);
+}

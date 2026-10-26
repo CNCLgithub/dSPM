@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LaTeX Equation Renderer</title>
+    <script>
+      // Define setup() BEFORE React loads so MATLAB can call it
+      // Store data for React to pick up when it mounts
+      window.__MATLAB_DATA__ = null;
+      window.__MATLAB_COMPONENT__ = null;
+      
+      function setup(htmlComponent) {
+        window.__MATLAB_COMPONENT__ = htmlComponent;
+        window.__MATLAB_DATA__ = htmlComponent.Data;
+        
+        // Listen for future data changes
+        htmlComponent.addEventListener('DataChanged', function() {
+          window.__MATLAB_DATA__ = htmlComponent.Data;
+          // Dispatch custom event for React to catch
+          window.dispatchEvent(new CustomEvent('matlabDataChanged', { 
+            detail: htmlComponent.Data 
+          }));
+        });
+        
+        // If React already mounted, trigger update
+        if (window.__REACT_READY__) {
+          window.dispatchEvent(new CustomEvent('matlabDataChanged', { 
+            detail: htmlComponent.Data 
+          }));
+        }
+      }
+    </script>
+    <script type="module" crossorigin src="./assets/index-ECzIdKmU.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Dvs9LwDR.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reservoir Programming GUI</title>
+    <script type="module" crossorigin src="./assets/index-DSOOlrDx.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-7sHAnIvR.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    
+    <!-- MATLAB uihtml bridge
+    <script>
+      let htmlComponent = null;
+      
+      function setup(component) {
+        htmlComponent = component;
+        
+        // Signal to MATLAB that we're ready
+        htmlComponent.Data = { action: 'ready' };
+        
+        // Make it globally accessible for React
+        window.matlabBridge = htmlComponent;
+      }
+    </script> -->
+    
+    <!-- MATLAB uihtml bridge -->
+    <script>
+      let htmlComponent = null;
+      
+      function setup(component) {
+        console.log('MATLAB uihtml setup called!');
+        htmlComponent = component;
+        
+        // Make it globally accessible for React
+        window.matlabBridge = htmlComponent;
+        
+        // Listen for data FROM MATLAB
+        htmlComponent.addEventListener('DataChanged', () => {
+          const data = htmlComponent.Data;
+          console.log('Data received from MATLAB:', data);
+          
+          // Dispatch custom event for React to catch
+          window.dispatchEvent(new CustomEvent('matlabData', { 
+            detail: data 
+          }));
+        });
+        
+        // Signal to MATLAB that we're ready
+        htmlComponent.Data = { action: 'ready' };
+      }
+    </script>
+  </body>
+  <!-- <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body> -->
+</html>

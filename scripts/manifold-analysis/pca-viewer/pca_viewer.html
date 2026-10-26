@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dSPM · PCA Manifold Viewer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js"></script>
+<script src="pca_data.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --sidebar-w: 252px;
+  --bg: #eef0f5; --sidebar: #141824;
+  --text-light: #c8cfe0; --text-dim: #6b7694;
+  --accent: #4f8ef7; --panel-bg: #fff;
+  --panel-border: #e2e6ef; --radius: 10px;
+}
+html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); overflow: hidden; }
+#app { display: flex; height: 100vh; }
+
+/* ── Sidebar ── */
+#sidebar {
+  width: var(--sidebar-w); min-width: var(--sidebar-w);
+  background: var(--sidebar); display: flex; flex-direction: column;
+  overflow-y: auto; overflow-x: hidden; border-right: 1px solid #0a0d14;
+}
+#sidebar-header { padding: 20px 18px 15px; border-bottom: 1px solid #252d42; flex-shrink: 0; }
+#sidebar-header h1 { font-family:'DM Serif Display',serif; font-size:18px; color:#fff; line-height:1.2; }
+#sidebar-header p  { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-dim); margin-top:5px; letter-spacing:.5px; }
+
+.sb-section { padding: 13px 18px; border-bottom: 1px solid #252d42; flex-shrink: 0; }
+
+/* Label row with tooltip */
+.sb-label-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 9px;
+}
+.sb-label {
+  font-family:'DM Mono',monospace; font-size:9px; font-weight:500; color:var(--text-dim);
+  letter-spacing:1.5px; text-transform:uppercase;
+}
+.tip-icon {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #252d42; color: var(--text-dim);
+  font-size: 9px; line-height: 14px; text-align: center;
+  cursor: help; position: relative; flex-shrink: 0;
+  font-family: 'DM Mono', monospace; font-style: normal;
+  transition: background .15s;
+}
+.tip-icon:hover { background: var(--accent); color: #fff; }
+
+/* Global tooltip — rendered in <body>, escapes all overflow contexts */
+#g-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: #0a0d14;
+  color: #c8cfe0;
+  font-size: 11px; line-height: 1.45;
+  font-family: 'DM Sans', sans-serif; font-weight: 400;
+  padding: 9px 11px; border-radius: 7px;
+  width: 210px; white-space: normal;
+  border: 1px solid #252d42;
+  box-shadow: 0 6px 20px rgba(0,0,0,.55);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+}
+
+/* Epoch pills */
+.epoch-pills { display:flex; flex-direction:column; gap:4px; }
+.epoch-pill  { display:flex; align-items:center; padding:7px 10px; border-radius:6px;
+               border:1px solid transparent; background:transparent; color:var(--text-light);
+               font-family:'DM Sans',sans-serif; font-size:12px; cursor:pointer; text-align:left;
+               transition:all .14s; gap:8px; }
+.epoch-pill:hover  { background:#252d42; }
+.epoch-pill.active { background:#252d42; border-color:var(--accent); color:#fff; }
+.epoch-badge { font-family:'DM Mono',monospace; font-size:9px; color:var(--text-dim);
+               background:#0d1120; border-radius:4px; padding:2px 5px; white-space:nowrap; margin-left:auto; }
+.epoch-pill.active .epoch-badge { color:var(--accent); }
+
+/* System buttons */
+.sys-btn { display:flex; align-items:center; gap:8px; width:100%; padding:7px 10px; border-radius:6px;
+           border:none; background:transparent; color:var(--text-light); font-family:'DM Sans',sans-serif;
+           font-size:12.5px; cursor:pointer; text-align:left; transition:background .14s; margin-bottom:2px; }
+.sys-btn:hover  { background:#252d42; }
+.sys-btn.active { background:#252d42; font-weight:600; color:#fff; }
+.sys-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* Radio */
+.radio-group { display:flex; flex-direction:column; gap:3px; }
+.radio-row   { display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:6px;
+               cursor:pointer; transition:background .12s; }
+.radio-row:hover { background:#252d42; }
+.radio-row input { accent-color:var(--accent); cursor:pointer; }
+.radio-row label { font-size:12.5px; color:var(--text-light); cursor:pointer; }
+
+/* 2D/3D toggle */
+.toggle-group { display:flex; background:#0d1120; border-radius:6px; padding:3px; gap:2px; }
+.toggle-btn   { flex:1; padding:5px 0; border:none; border-radius:4px; background:transparent;
+                color:var(--text-dim); font-family:'DM Mono',monospace; font-size:11px;
+                font-weight:500; cursor:pointer; transition:all .14s; letter-spacing:.5px; }
+.toggle-btn.active { background:var(--accent); color:#fff; }
+
+/* Panel count */
+.count-row { display:flex; align-items:center; gap:8px; }
+.count-btn  { width:28px; height:28px; border-radius:6px; border:1px solid #2d3650;
+              background:#0d1120; color:var(--text-light); font-size:18px; line-height:1;
+              cursor:pointer; transition:all .12s; display:flex; align-items:center; justify-content:center; }
+.count-btn:hover { background:#252d42; border-color:var(--accent); }
+.count-display   { flex:1; text-align:center; font-family:'DM Mono',monospace; font-size:13px; color:#fff;
+                   background:#0d1120; border:1px solid #2d3650; border-radius:6px; padding:4px 0; }
+
+/* Sliders */
+.time-row { display:flex; gap:6px; align-items:center; margin-bottom:5px; }
+.time-label { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-dim); min-width:38px; }
+input[type=range] { -webkit-appearance:none; flex:1; height:4px; border-radius:2px;
+                    background:#2d3650; outline:none; cursor:pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px;
+  border-radius:50%; background:var(--accent); cursor:pointer; border:2px solid var(--sidebar); }
+.toggle-sm { font-family:'DM Mono',monospace; font-size:9.5px; color:var(--text-dim);
+             display:flex; align-items:center; gap:5px; cursor:pointer; user-select:none; margin-top:6px; }
+.toggle-sm input { accent-color:var(--accent); cursor:pointer; }
+
+/* Variance bars */
+.expl-row  { display:flex; align-items:center; gap:5px; margin-bottom:3px; }
+.expl-key  { font-family:'DM Mono',monospace; font-size:9px; color:var(--text-dim); min-width:22px; }
+.expl-track{ flex:1; height:4px; background:#0d1120; border-radius:2px; overflow:hidden; }
+.expl-fill { height:100%; border-radius:2px; transition:width .3s; }
+.expl-pct  { font-family:'DM Mono',monospace; font-size:9px; color:var(--text-dim); min-width:30px; text-align:right; }
+
+/* ── Main area ── */
+#main { flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+#topbar { display:flex; align-items:center; gap:10px; padding:9px 14px;
+          background:var(--panel-bg); border-bottom:1px solid var(--panel-border); flex-shrink:0; }
+#topbar-meta  { font-family:'DM Mono',monospace; font-size:10px; color:#aaa; }
+#topbar-sys   { font-family:'DM Serif Display',serif; font-size:15px; color:#1a1f2e; }
+.topbar-sep   { color:#ccc; font-size:12px; }
+#topbar-epoch { font-family:'DM Mono',monospace; font-size:11px; padding:2px 8px;
+                border-radius:4px; background:#f0f2f6; color:#555; }
+#topbar-right { margin-left:auto; font-family:'DM Mono',monospace; font-size:10px; color:#bbb; }
+
+#plot-grid { flex:1; display:grid; gap:8px; padding:8px; overflow:hidden; }
+
+.plot-panel { background:var(--panel-bg); border:1px solid var(--panel-border);
+              border-radius:var(--radius); display:flex; flex-direction:column;
+              overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.05); }
+.panel-bar  { display:flex; align-items:center; gap:5px; padding:6px 9px;
+              border-bottom:1px solid var(--panel-border); background:#fafbfd;
+              flex-shrink:0; flex-wrap:wrap; }
+.ax-label   { font-family:'DM Mono',monospace; font-size:10px; color:#aaa; }
+.pc-sel     { font-family:'DM Mono',monospace; font-size:11px; border:1px solid #e0e4ee;
+              border-radius:5px; padding:3px 5px; background:#fff; color:#333;
+              cursor:pointer; outline:none; min-width:52px; -webkit-appearance:none; }
+.pc-sel:focus { border-color:var(--accent); }
+.panel-spacer { flex:1; }
+.replot-btn { font-family:'DM Mono',monospace; font-size:10px; padding:3px 8px; border-radius:5px;
+              border:1px solid #e0e4ee; background:#fff; color:#888; cursor:pointer; transition:all .12s; }
+.replot-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+.plot-area { flex:1; min-height:0; }
+
+/* ── Colorbar ── */
+#colorbar {
+  position:absolute; bottom:20px; left:16px;
+  background:rgba(255,255,255,0.93); border:1px solid #dde0ea; border-radius:8px;
+  padding:10px 12px; z-index:10; pointer-events:none;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+  display:flex; flex-direction:column; gap:5px; min-width:130px;
+}
+#colorbar.hidden { display:none; }
+#cb-title { font-family:'DM Mono',monospace; font-size:9px; color:#888; letter-spacing:.8px; text-transform:uppercase; }
+#cb-bar   { width:106px; height:10px; border-radius:4px; border:1px solid rgba(0,0,0,.08);
+            background:linear-gradient(to right, rgb(0,220,220), rgb(120,60,240), rgb(255,0,200)); }
+#cb-labels { display:flex; justify-content:space-between; }
+.cb-lbl { font-family:'DM Mono',monospace; font-size:9px; color:#999; }
+
+#bounce-legend {
+  position:absolute; bottom:20px; left:16px;
+  background:rgba(255,255,255,0.93); border:1px solid #dde0ea; border-radius:8px;
+  padding:10px 12px; z-index:10; pointer-events:none;
+  box-shadow:0 2px 8px rgba(0,0,0,.08); display:none; flex-direction:column; gap:5px;
+}
+#bounce-legend.visible { display:flex; }
+.bl-row { display:flex; align-items:center; gap:7px; }
+.bl-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.bl-txt { font-family:'DM Mono',monospace; font-size:10px; color:#555; }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══ SIDEBAR ══ -->
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>PCA Manifold<br><em>Viewer</em></h1>
+    <p>dSPM · DMFC · pong task</p>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label-row">
+      <span class="sb-label">PCA Epoch Basis</span>
+      <span class="tip-icon" data-tip="Each epoch trains a separate PCA on that time window only. The full trial is then projected into that basis — so you're seeing all time-points, but oriented by the geometry of the chosen window.">?</span>
+    </div>
+    <div class="epoch-pills" id="epoch-pills"></div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label-row">
+      <span class="sb-label">System</span>
+      <span class="tip-icon" data-tip="Switch between the brain (DMFC population) and the three model systems. dSPM uses physics ODEs with no training. RNN models are trained on trial data with different loss functions.">?</span>
+    </div>
+    <div id="sys-btns"></div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label-row">
+      <span class="sb-label">Color by</span>
+      <span class="tip-icon" data-tip="Endpoint Y: colors trajectories by where the ball ends up (cyan = low, magenta = high). Bounce wall: colors by which wall the ball hit, or no bounce (blue / red / green).">?</span>
+    </div>
+    <div class="radio-group">
+      <label class="radio-row">
+        <input type="radio" name="cm" value="endpoint" checked>
+        <label>Endpoint Y</label>
+      </label>
+      <label class="radio-row">
+        <input type="radio" name="cm" value="bounce">
+        <label>Bounce wall</label>
+      </label>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label-row">
+      <span class="sb-label">View</span>
+      <span class="tip-icon" data-tip="2D: fast, pan by default (drag to move, scroll to zoom). 3D: rotatable — drag to orbit, scroll to zoom. Each panel's PC axes are set independently below.">?</span>
+    </div>
+    <div class="toggle-group">
+      <button class="toggle-btn"        id="btn2d" onclick="setView('2d')">2D</button>
+      <button class="toggle-btn active" id="btn3d" onclick="setView('3d')">3D</button>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label-row">
+      <span class="sb-label">Panels</span>
+      <span class="tip-icon" data-tip="Add or remove plot panels. Each panel has independent PC axis selectors. Adding a panel is instant — only the new panel is plotted.">?</span>
+    </div>
+    <div class="count-row">
+      <button class="count-btn" onclick="changeN(-1)">−</button>
+      <div class="count-display" id="n-display">2</div>
+      <button class="count-btn" onclick="changeN(+1)">+</button>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label-row">
+      <span class="sb-label">Display time window</span>
+      <span class="tip-icon" data-tip="Sets the time range rendered in each panel. Try sliding the end point back toward 0 to watch trials evolve step by step through their PCA trajectories.">?</span>
+    </div>
+    <div class="time-row">
+      <span class="time-label" id="tlbl-min">0ms</span>
+      <input type="range" id="sl-tmin" min="0" max="100" value="0" oninput="onSlide()">
+    </div>
+    <div class="time-row">
+      <span class="time-label" id="tlbl-max">—</span>
+      <input type="range" id="sl-tmax" min="0" max="100" value="100" oninput="onSlide()">
+    </div>
+    <label class="toggle-sm">
+      <input type="checkbox" id="chk-starts" checked onchange="replotAll()">
+      Show trial starts
+    </label>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label-row">
+      <span class="sb-label">Variance explained</span>
+      <span class="tip-icon" data-tip="How much variance each PC captures, for the currently selected system and epoch. The basis window strongly affects how variance is distributed across PCs.">?</span>
+    </div>
+    <div id="expl-bars"></div>
+  </div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div id="main">
+  <div id="topbar">
+    <span id="topbar-meta">VIEWING ·</span>
+    <span id="topbar-sys">—</span>
+    <span class="topbar-sep">|</span>
+    <span id="topbar-epoch">—</span>
+    <span id="topbar-right">—</span>
+  </div>
+  <div id="plot-grid"></div>
+
+  <div id="colorbar">
+    <div id="cb-title">Endpoint Y</div>
+    <div id="cb-bar"></div>
+    <div id="cb-labels">
+      <span class="cb-lbl" id="cb-lo">—</span>
+      <span class="cb-lbl" id="cb-hi">—</span>
+    </div>
+  </div>
+
+  <div id="bounce-legend">
+    <div class="bl-row"><div class="bl-dot" style="background:#3b7dd8"></div><span class="bl-txt">No bounce</span></div>
+    <div class="bl-row"><div class="bl-dot" style="background:#c0392b"></div><span class="bl-txt">Top wall</span></div>
+    <div class="bl-row"><div class="bl-dot" style="background:#27ae60"></div><span class="bl-txt">Bottom wall</span></div>
+  </div>
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  STATE  — defaults: 3D, 2 panels, time end at 1000ms
+// ══════════════════════════════════════════════════════
+const S = {
+  epoch: null, system: null,
+  colorMode: 'endpoint',
+  viewMode: '3d',       // ← default 3D
+  nPanels: 2,
+  tminIdx: 0,
+  tmaxIdx: 0,           // set to ~1000ms after data loads
+  panels: [
+    {pcx:0,pcy:1,pcz:2,ranges:null}, {pcx:0,pcy:2,pcz:3,ranges:null},
+    {pcx:1,pcy:2,pcz:3,ranges:null}, {pcx:0,pcy:3,pcz:4,ranges:null},
+    {pcx:2,pcy:3,pcz:4,ranges:null}, {pcx:1,pcy:3,pcz:4,ranges:null},
+  ]
+};
+
+const WALL_COLORS = ['#3b7dd8','#c0392b','#27ae60'];
+const WALL_LABELS = ['No bounce','Top wall','Bottom wall'];
+let D = null;
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  if (typeof PCA_DATA === 'undefined') {
+    document.body.innerHTML =
+      '<div style="padding:60px;font-family:monospace;color:#c0392b;font-size:14px">'+
+      '⚠ pca_data.js not found.<br>Place pca_data.js in the same folder as this file.</div>';
+    return;
+  }
+  D = PCA_DATA;
+  S.epoch  = D.meta.epochs[0].key;
+  S.system = D.meta.system_keys[0];
+
+  // Default time end: closest bin to 1000ms
+  const tvec = D.meta.tvec;
+  S.tminIdx = 0;
+  const idx1000 = tvec.findIndex(t => t >= 1000);
+  S.tmaxIdx = idx1000 >= 0 ? idx1000 : tvec.length - 1;
+
+  buildEpochPills();
+  buildSysBtns();
+  initSliders();
+  updateExplBars();
+  buildGridCSS();
+  for (let i = 0; i < S.nPanels; i++) appendPanel(i);
+  replotAll();
+  updateTopbar();
+  updateColorbar();
+
+  document.addEventListener('change', e => {
+    if (e.target.name === 'cm') { S.colorMode = e.target.value; replotAll(); updateColorbar(); }
+  });
+});
+
+// ══════════════════════════════════════════════════════
+//  SIDEBAR
+// ══════════════════════════════════════════════════════
+function buildEpochPills() {
+  const el = document.getElementById('epoch-pills');
+  el.innerHTML = '';
+  D.meta.epochs.forEach(ep => {
+    const btn = document.createElement('button');
+    btn.className = 'epoch-pill' + (ep.key === S.epoch ? ' active' : '');
+    btn.innerHTML = `${ep.label}<span class="epoch-badge">${ep.window_ms[0]}–${ep.window_ms[1]}ms</span>`;
+    btn.onclick = () => {
+      S.epoch = ep.key;
+      document.querySelectorAll('.epoch-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      resetAllRanges(); updateExplBars(); replotAll(); updateTopbar();
+    };
+    el.appendChild(btn);
+  });
+}
+
+function buildSysBtns() {
+  const el = document.getElementById('sys-btns');
+  el.innerHTML = '';
+  D.meta.system_keys.forEach((key, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'sys-btn' + (key === S.system ? ' active' : '');
+    btn.innerHTML =
+      `<span class="sys-dot" style="background:${D.meta.system_colors[i]}"></span>${D.meta.system_labels[i]}`;
+    btn.onclick = () => {
+      S.system = key;
+      document.querySelectorAll('.sys-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      resetAllRanges(); updateExplBars(); replotAll(); updateTopbar();
+    };
+    el.appendChild(btn);
+  });
+}
+
+function initSliders() {
+  const n = D.meta.tvec.length - 1;
+  document.getElementById('sl-tmin').max   = n;
+  document.getElementById('sl-tmax').max   = n;
+  document.getElementById('sl-tmin').value = S.tminIdx;
+  document.getElementById('sl-tmax').value = S.tmaxIdx;
+  updateTimeLabels();
+}
+
+function updateTimeLabels() {
+  document.getElementById('tlbl-min').textContent = Math.round(D.meta.tvec[S.tminIdx]) + 'ms';
+  document.getElementById('tlbl-max').textContent = Math.round(D.meta.tvec[S.tmaxIdx]) + 'ms';
+}
+
+function updateExplBars() {
+  const expl = D.data[S.epoch][S.system].expl;
+  const col  = sysColor();
+  document.getElementById('expl-bars').innerHTML =
+    Array.from({length: Math.min(8, expl.length)}, (_, i) =>
+      `<div class="expl-row">
+        <span class="expl-key">PC${i+1}</span>
+        <div class="expl-track">
+          <div class="expl-fill" style="width:${Math.min(expl[i],100)}%;background:${col}"></div>
+        </div>
+        <span class="expl-pct">${expl[i].toFixed(1)}%</span>
+      </div>`).join('');
+}
+
+function updateTopbar() {
+  const si = D.meta.system_keys.indexOf(S.system);
+  const ep = D.meta.epochs.find(e => e.key === S.epoch);
+  document.getElementById('topbar-sys').textContent = D.meta.system_labels[si];
+  document.getElementById('topbar-sys').style.color = D.meta.system_colors[si];
+  document.getElementById('topbar-epoch').textContent = ep.label;
+  document.getElementById('topbar-right').textContent = `basis: ${ep.window_ms[0]}–${ep.window_ms[1]} ms`;
+}
+
+function updateColorbar() {
+  const isEP = S.colorMode === 'endpoint';
+  document.getElementById('colorbar').classList.toggle('hidden', !isEP);
+  document.getElementById('bounce-legend').classList.toggle('visible', !isEP);
+  if (isEP) {
+    const ey = D.conditions.endpoint_y;
+    document.getElementById('cb-lo').textContent = Math.min(...ey).toFixed(1);
+    document.getElementById('cb-hi').textContent = Math.max(...ey).toFixed(1);
+  }
+}
+
+function sysColor() {
+  return D.meta.system_colors[D.meta.system_keys.indexOf(S.system)];
+}
+
+// ══════════════════════════════════════════════════════
+//  GRID  (surgical add/remove)
+// ══════════════════════════════════════════════════════
+function buildGridCSS() {
+  const grid = document.getElementById('plot-grid');
+  const n = S.nPanels;
+  const cols = n <= 1 ? 1 : n <= 2 ? 2 : n <= 4 ? 2 : 3;
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  grid.style.gridTemplateRows    = `repeat(${Math.ceil(n/cols)}, 1fr)`;
+}
+
+function appendPanel(i) {
+  const grid = document.getElementById('plot-grid');
+  const nPC  = D.meta.nPC;
+  const p    = S.panels[i];
+  const is3d = S.viewMode === '3d';
+
+  const mkSel = (axis) => {
+    const cur  = p[axis];
+    const hide = (axis === 'pcz' && !is3d) ? ' style="display:none"' : '';
+    const opts = Array.from({length:nPC}, (_,j) =>
+      `<option value="${j}"${j===cur?' selected':''}>PC ${j+1}</option>`).join('');
+    return `<select class="pc-sel" data-panel="${i}" data-axis="${axis}"
+      onchange="onPcSel(this)" id="sel-${i}-${axis}"${hide}>${opts}</select>`;
+  };
+
+  const panel = document.createElement('div');
+  panel.className = 'plot-panel';
+  panel.id = `panel-${i}`;
+  panel.innerHTML = `
+    <div class="panel-bar">
+      <span class="ax-label">X</span>${mkSel('pcx')}
+      <span class="ax-label" style="margin-left:3px">Y</span>${mkSel('pcy')}
+      <span class="ax-label" style="margin-left:3px" id="zlbl-${i}"${!is3d?' style="display:none"':''}>Z</span>
+      ${mkSel('pcz')}
+      <div class="panel-spacer"></div>
+      <button class="replot-btn" onclick="plotPanel(${i})">↺</button>
+    </div>
+    <div class="plot-area" id="plot-${i}"></div>`;
+  grid.appendChild(panel);
+}
+
+function changeN(delta) {
+  const newN = Math.max(1, Math.min(6, S.nPanels + delta));
+  if (newN === S.nPanels) return;
+  const oldN = S.nPanels;
+  S.nPanels  = newN;
+  document.getElementById('n-display').textContent = newN;
+
+  if (newN > oldN) {
+    for (let i = oldN; i < newN; i++) appendPanel(i);
+    buildGridCSS();
+    for (let i = 0; i < oldN; i++) {
+      const el = document.getElementById(`plot-${i}`);
+      if (el) Plotly.Plots.resize(el);
+    }
+    for (let i = oldN; i < newN; i++) plotPanel(i);
+  } else {
+    for (let i = oldN - 1; i >= newN; i--) {
+      const pe = document.getElementById(`plot-${i}`);
+      if (pe) Plotly.purge(pe);
+      const pan = document.getElementById(`panel-${i}`);
+      if (pan) pan.remove();
+    }
+    buildGridCSS();
+    setTimeout(() => {
+      for (let i = 0; i < newN; i++) {
+        const el = document.getElementById(`plot-${i}`);
+        if (el) Plotly.Plots.resize(el);
+      }
+    }, 60);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  VIEW TOGGLE  (no DOM rebuild — just toggle Z + react)
+// ══════════════════════════════════════════════════════
+function setView(mode) {
+  if (S.viewMode === mode) return;
+  S.viewMode = mode;
+  document.getElementById('btn2d').classList.toggle('active', mode === '2d');
+  document.getElementById('btn3d').classList.toggle('active', mode === '3d');
+
+  // Show/hide Z selectors in place — no DOM rebuild
+  for (let i = 0; i < S.nPanels; i++) {
+    const zlbl = document.getElementById(`zlbl-${i}`);
+    const zsel = document.getElementById(`sel-${i}-pcz`);
+    if (zlbl) zlbl.style.display = mode === '3d' ? '' : 'none';
+    if (zsel) zsel.style.display = mode === '3d' ? '' : 'none';
+  }
+  // Plotly.react handles scatter ↔ scatter3d type change in-place
+  replotAll();
+}
+
+// ══════════════════════════════════════════════════════
+//  COLOR
+// ══════════════════════════════════════════════════════
+function cyanMagenta(t) {
+  const stops = [
+    [0.00, [0,   220, 220]],
+    [0.50, [120,  60, 240]],
+    [1.00, [255,   0, 200]]
+  ];
+  let lo = stops[0], hi = stops[stops.length-1];
+  for (let i = 0; i < stops.length-1; i++) {
+    if (t >= stops[i][0] && t <= stops[i+1][0]) { lo=stops[i]; hi=stops[i+1]; break; }
+  }
+  const f = (t - lo[0]) / (hi[0] - lo[0] + 1e-9);
+  return stops[0][1].map((_, k) => Math.round(lo[1][k] + f*(hi[1][k]-lo[1][k])));
+}
+
+function condColorRGB(c) {
+  if (S.colorMode === 'bounce') return null;
+  const ey = D.conditions.endpoint_y;
+  const mn = Math.min(...ey), mx = Math.max(...ey);
+  return cyanMagenta((ey[c] - mn) / (mx - mn + 1e-9));
+}
+
+function rgbStr(rgb, a) {
+  return a < 1 ? `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})` : `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+}
+function lighten(rgb, f) { return rgb.map(v => Math.round(v + (255-v)*f)); }
+
+// ══════════════════════════════════════════════════════
+//  AXIS RANGE LOCKING
+//  Ranges computed from ALL valid bins and cached per panel.
+//  Cache invalidates only on system/epoch/PC changes — NOT on slider.
+// ══════════════════════════════════════════════════════
+function resetAllRanges() {
+  S.panels.forEach(p => p.ranges = null);
+}
+
+function computePanelRanges(pi) {
+  const p      = S.panels[pi];
+  const traj   = D.data[S.epoch][S.system].traj;
+  const nT     = D.meta.ntrials;
+  const allBins = Array.from({length: D.meta.tvec.length}, (_, i) => i);
+
+  let xmin=Infinity, xmax=-Infinity;
+  let ymin=Infinity, ymax=-Infinity;
+  let zmin=Infinity, zmax=-Infinity;
+
+  for (let c = 0; c < nT; c++) {
+    for (const t of allBins) {
+      const xv = traj[c][p.pcx][t];
+      const yv = traj[c][p.pcy][t];
+      const zv = traj[c][p.pcz][t];
+      if (isFinite(xv)) { if (xv < xmin) xmin=xv; if (xv > xmax) xmax=xv; }
+      if (isFinite(yv)) { if (yv < ymin) ymin=yv; if (yv > ymax) ymax=yv; }
+      if (isFinite(zv)) { if (zv < zmin) zmin=zv; if (zv > zmax) zmax=zv; }
+    }
+  }
+
+  const pad = (mn, mx) => { const r = (mx-mn)*0.06; return [mn-r, mx+r]; };
+  p.ranges = { x: pad(xmin,xmax), y: pad(ymin,ymax), z: pad(zmin,zmax) };
+}
+
+// ══════════════════════════════════════════════════════
+//  PLOTTING
+// ══════════════════════════════════════════════════════
+function getTimeBins() {
+  const bins = [];
+  for (let t = S.tminIdx; t <= Math.min(S.tmaxIdx, D.meta.tvec.length-1); t++) bins.push(t);
+  return bins;
+}
+
+function plotPanel(pi) {
+  const el = document.getElementById(`plot-${pi}`);
+  if (!el) return;
+
+  // Compute and cache axis ranges from full data if not yet done
+  if (!S.panels[pi].ranges) computePanelRanges(pi);
+  const rng = S.panels[pi].ranges;
+
+  const p      = S.panels[pi];
+  const traj   = D.data[S.epoch][S.system].traj;
+  const tbins  = getTimeBins();
+  const is3d   = S.viewMode === '3d';
+  const nT     = D.meta.ntrials;
+  const showSt = document.getElementById('chk-starts').checked;
+  const traces = [];
+
+  for (let c = 0; c < nT; c++) {
+    const bw       = D.conditions.bounce_wall[c];
+    const isWall   = S.colorMode === 'bounce';
+    const hexCol   = isWall ? WALL_COLORS[bw] : null;
+    const rgb      = isWall ? null : condColorRGB(c);
+    const lineCol  = isWall ? hexCol : rgbStr(rgb, 0.5);
+    const endCol   = isWall ? hexCol : rgbStr(rgb, 1.0);
+    const startCol = isWall ? hexCol : rgbStr(lighten(rgb, 0.55), 0.8);
+
+    const ey  = D.conditions.endpoint_y[c];
+    const tip = `Cond ${c+1}<br>EP_y=${ey.toFixed(2)}<br>${WALL_LABELS[bw]}<extra></extra>`;
+    const xv  = tbins.map(t => traj[c][p.pcx][t]);
+    const yv  = tbins.map(t => traj[c][p.pcy][t]);
+
+    if (is3d) {
+      const zv = tbins.map(t => traj[c][p.pcz][t]);
+      traces.push({ type:'scatter3d', mode:'lines', x:xv, y:yv, z:zv,
+        line:{color:lineCol,width:2}, showlegend:false, hoverinfo:'skip' });
+      traces.push({ type:'scatter3d', mode:'markers',
+        x:[xv.at(-1)], y:[yv.at(-1)], z:[zv.at(-1)],
+        marker:{color:endCol,size:5,symbol:'square',line:{color:'rgba(0,0,0,0.25)',width:1}},
+        showlegend:false, hovertemplate:tip });
+      if (showSt) traces.push({ type:'scatter3d', mode:'markers',
+        x:[xv[0]], y:[yv[0]], z:[zv[0]],
+        marker:{color:startCol,size:3.5,line:{color:'rgba(255,255,255,0.6)',width:1}},
+        showlegend:false, hoverinfo:'skip' });
+    } else {
+      traces.push({ type:'scatter', mode:'lines', x:xv, y:yv,
+        line:{color:lineCol,width:1.5}, showlegend:false, hoverinfo:'skip' });
+      traces.push({ type:'scatter', mode:'markers',
+        x:[xv.at(-1)], y:[yv.at(-1)],
+        marker:{color:endCol,size:7,symbol:'square',line:{color:'rgba(0,0,0,0.2)',width:1}},
+        showlegend:false, hovertemplate:tip });
+      if (showSt) traces.push({ type:'scatter', mode:'markers',
+        x:[xv[0]], y:[yv[0]],
+        marker:{color:startCol,size:5,symbol:'circle',line:{color:'rgba(255,255,255,0.8)',width:1.5}},
+        showlegend:false, hoverinfo:'skip' });
+    }
+  }
+
+  const axStyle = {
+    showgrid:true, gridcolor:'#ebebf0', gridwidth:1,
+    showline:false, zeroline:false,
+    tickfont:{family:'DM Mono',size:9,color:'#aaa'},
+    titlefont:{family:'DM Mono',size:10,color:'#888'}
+  };
+
+  const layout = is3d ? {
+    scene:{
+      xaxis:{...axStyle, title:`PC ${p.pcx+1}`, range:rng.x},
+      yaxis:{...axStyle, title:`PC ${p.pcy+1}`, range:rng.y},
+      zaxis:{...axStyle, title:`PC ${p.pcz+1}`, range:rng.z},
+      bgcolor:'#fff', camera:{eye:{x:1.4,y:1.4,z:0.9}}
+    },
+    margin:{l:0,r:0,t:0,b:0},
+    paper_bgcolor:'white', showlegend:false
+  } : {
+    xaxis:{...axStyle, title:`PC ${p.pcx+1}`, range:rng.x},
+    yaxis:{...axStyle, title:`PC ${p.pcy+1}`, range:rng.y},
+    margin:{l:36,r:8,t:6,b:34},
+    dragmode: 'pan',
+    paper_bgcolor:'white', plot_bgcolor:'white', showlegend:false
+  };
+
+  Plotly.react(el, traces, layout, {
+    displayModeBar:true,
+    modeBarButtonsToRemove:['toImage','sendDataToCloud'],
+    scrollZoom: true,         // scroll to zoom in both modes
+    displaylogo:false,
+    responsive:true
+  });
+}
+
+function replotAll() {
+  for (let i = 0; i < S.nPanels; i++) plotPanel(i);
+}
+
+// ══════════════════════════════════════════════════════
+//  EVENTS
+// ══════════════════════════════════════════════════════
+function onPcSel(sel) {
+  const pi = +sel.dataset.panel;
+  S.panels[pi][sel.dataset.axis] = +sel.value;
+  S.panels[pi].ranges = null;   // recompute ranges for new axis combo
+  plotPanel(pi);
+}
+
+function onSlide() {
+  let tmin = +document.getElementById('sl-tmin').value;
+  let tmax = +document.getElementById('sl-tmax').value;
+  if (tmin >= tmax) {
+    tmin = Math.max(0, tmax-1);
+    document.getElementById('sl-tmin').value = tmin;
+  }
+  S.tminIdx = tmin; S.tmaxIdx = tmax;
+  updateTimeLabels(); replotAll();
+}
+
+window.addEventListener('resize', () => {
+  for (let i = 0; i < S.nPanels; i++) {
+    const el = document.getElementById(`plot-${i}`);
+    if (el) Plotly.Plots.resize(el);
+  }
+});
+</script>
+<!-- Global tooltip — lives in body, above all overflow contexts -->
+<div id="g-tooltip"></div>
+
+<script>
+// ── Global tooltip for .tip-icon elements ──────────────
+const gTip = document.getElementById('g-tooltip');
+let tipTimeout = null;
+
+document.addEventListener('mouseover', e => {
+  const icon = e.target.closest('.tip-icon');
+  if (!icon) return;
+  clearTimeout(tipTimeout);
+  const rect = icon.getBoundingClientRect();
+  gTip.textContent = icon.dataset.tip;
+
+  // Position to the right of icon; flip left if near right edge
+  let left = rect.right + 10;
+  const tipW = 220;
+  if (left + tipW > window.innerWidth - 10) left = rect.left - tipW - 10;
+  const top = Math.min(rect.top - 4, window.innerHeight - 160);
+
+  gTip.style.left = left + 'px';
+  gTip.style.top  = top  + 'px';
+  gTip.style.opacity = '1';
+});
+
+document.addEventListener('mouseout', e => {
+  const icon = e.target.closest('.tip-icon');
+  if (!icon) return;
+  tipTimeout = setTimeout(() => { gTip.style.opacity = '0'; }, 80);
+});
+</script>
+
+</body>
+</html>

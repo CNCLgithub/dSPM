@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --wizard-bg: #1a1a2e;
+  --wizard-panel: #16213e;
+  --wizard-accent: #0f3460;
+  --wizard-highlight: #e94560;
+  --wizard-text: #eaeaea;
+  --wizard-muted: #8b8b8b;
+  --wizard-success: #4ade80;
+  --wizard-warning: #fbbf24;
+  --wizard-error: #f87171;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--wizard-bg);
+  color: var(--wizard-text);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  overflow: hidden;
+}
+
+#root {
+  height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--wizard-panel);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--wizard-accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--wizard-highlight);
+}
+
+/* Canvas styles for visualizations */
+.viz-canvas {
+  background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%);
+  border: 1px solid var(--wizard-accent);
+  border-radius: 8px;
+}
+
+.grid-overlay {
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Slider styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-track {
+  background: var(--wizard-accent);
+  height: 4px;
+  border-radius: 2px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--wizard-highlight);
+  margin-top: -6px;
+}
+
+/* KaTeX overrides for dark theme */
+.katex {
+  color: var(--wizard-text);
+}
+
+/* Tab transitions */
+.tab-content {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Glow effects */
+.glow-on-hover:hover {
+  box-shadow: 0 0 15px rgba(233, 69, 96, 0.4);
+}

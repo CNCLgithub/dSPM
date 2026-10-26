@@ -1,0 +1,117 @@
+{
+  "version": "1.0",
+  "name": "Rössler Attractor (Scaled)",
+  "description": "Scaled Rössler system. Output range [-0.1, 0.1] for stable tanh dynamics.",
+  "created": "2025-01-16T00:00:00Z",
+  "modified": "2025-01-16T00:00:00Z",
+  "is_preset": true,
+  "validated": false,
+  "validation_notes": "Scaling applied but not yet validated against reference implementation.",
+  "config": {
+    "n_neurons": 100,
+    "gamma": 100,
+    "dt": 0.001,
+    "B_scale": 0.4,
+    "B_sparsity": 1.0,
+    "random_seed": 42,
+    "expansion_point": {
+      "x": {},
+      "y": {
+        "1": 0,
+        "2": 0,
+        "3": 0
+      }
+    }
+  },
+  "topology": {
+    "n_external_inputs": 0,
+    "n_external_outputs": 0,
+    "n_recurrent_inputs": 3,
+    "n_recurrent_outputs": 3
+  },
+  "inferred": {
+    "jet_order": 1,
+    "decompilation_order": 2
+  },
+  "scaling": {
+    "description": "Standard Rössler has y₁,y₂ in [-10,12] and y₃ spikes to ~25. We divide all outputs by scale factor s to keep in tanh linear regime.",
+    "scv": 100,
+    "time_divisor": 100,
+    "output_range": [
+      -0.12,
+      0.12
+    ]
+  },
+  "equations": [
+    {
+      "index": 1,
+      "outputType": "recurrent",
+      "tau": "s",
+      "latex": "-y_2 - y_3",
+      "comment": "dy₁/dt = (-y₂ - y₃) / s"
+    },
+    {
+      "index": 2,
+      "outputType": "recurrent",
+      "tau": "s",
+      "latex": "y_1 + a \\cdot y_2",
+      "comment": "dy₂/dt = (y₁ + a·y₂) / s"
+    },
+    {
+      "index": 3,
+      "outputType": "recurrent",
+      "tau": "s",
+      "latex": "b/s + y_3(s \\cdot y_1 - c)",
+      "comment": "dy₃/dt = (b/s + y₃(s·y₁ - c)) / s. Note: b/s is the constant term after scaling."
+    }
+  ],
+  "constants": [
+    {
+      "name": "a",
+      "value": 0.2,
+      "description": "System parameter"
+    },
+    {
+      "name": "b",
+      "value": 0.2,
+      "description": "System parameter"
+    },
+    {
+      "name": "c",
+      "value": 5.7,
+      "description": "Chaos parameter"
+    },
+    {
+      "name": "s",
+      "value": 100,
+      "description": "Scale factor (divides all outputs)"
+    }
+  ],
+  "expected_behavior": {
+    "attractor_type": "strange_attractor"
+  },
+  "schema_version": 2,
+  "ports": [
+    {
+      "id": "rec1",
+      "label": "x̃1",
+      "role": "recurrent",
+      "x0": 0,
+      "aliases": []
+    },
+    {
+      "id": "rec2",
+      "label": "x̃2",
+      "role": "recurrent",
+      "x0": 0,
+      "aliases": []
+    },
+    {
+      "id": "rec3",
+      "label": "x̃3",
+      "role": "recurrent",
+      "x0": 0,
+      "aliases": []
+    }
+  ]
+}

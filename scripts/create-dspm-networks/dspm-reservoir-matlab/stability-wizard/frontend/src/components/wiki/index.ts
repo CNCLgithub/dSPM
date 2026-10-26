@@ -1,0 +1,1 @@
+export { WikiPanel } from './WikiPanel';

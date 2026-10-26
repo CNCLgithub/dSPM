@@ -1,0 +1,26 @@
+# Data and model outputs are distributed separately (see README, "Data")
+data/
+hpc-outputs/
+scripts/network-data/
+scripts/manifold-analysis/data-pca/
+scripts/decoding-analysis/data/
+scripts/decoding-analysis/*_output/
+*.mat
+*.zip
+
+# Third-party papers and manuscript-only files
+papers/
+bib/
+
+# Dated snapshot of the PCA viewer data (lda_analysis.m reads manifold-analysis/pca_data.js)
+scripts/manifold-analysis/pca-viewer/pca_data_03_31_26.js
+
+# Personal cluster helpers
+sync.sh
+pull.sh
+
+# OS / editor
+.DS_Store
+*.asv
+*.m~
+slprj/

@@ -1,0 +1,125 @@
+{
+  "version": "1.0",
+  "name": "Lorenz Attractor (Scaled)",
+  "description": "Validated Lorenz system with proper scaling for tanh regime. Uses scv=200 coordinate shift to keep dynamics in [-0.1, 0.1] range.",
+  "created": "2025-01-16T00:00:00Z",
+  "modified": "2025-01-16T00:00:00Z",
+  "is_preset": true,
+  "validated": true,
+  "validation_notes": "Tested against Jason Kim's DNP implementation. Produces stable butterfly attractor for 200+ seconds.",
+  "config": {
+    "n_neurons": 100,
+    "gamma": 100,
+    "dt": 0.01,
+    "B_scale": 0.4,
+    "B_sparsity": 1.0,
+    "random_seed": 42,
+    "expansion_point": {
+      "x": {},
+      "y": {
+        "1": 0,
+        "2": 0,
+        "3": 0
+      }
+    }
+  },
+  "topology": {
+    "n_external_inputs": 0,
+    "n_external_outputs": 0,
+    "n_recurrent_inputs": 3,
+    "n_recurrent_outputs": 3
+  },
+  "inferred": {
+    "jet_order": 1,
+    "decompilation_order": 3
+  },
+  "scaling": {
+    "description": "Lorenz y₃ oscillates around 27 in standard form. We shift coordinates so y₃_scaled = (y₃_standard - 27)/scv oscillates around 0. All dynamics divided by 10 to stay in tanh linear regime.",
+    "scv": 200,
+    "time_divisor": 10,
+    "output_range": [
+      -0.1,
+      0.1
+    ]
+  },
+  "equations": [
+    {
+      "index": 1,
+      "outputType": "recurrent",
+      "tau": "10",
+      "latex": "\\sigma (y_2 - y_1)",
+      "comment": "dy₁/dt = σ(y₂ - y₁) / τ"
+    },
+    {
+      "index": 2,
+      "outputType": "recurrent",
+      "tau": "10",
+      "latex": "y_1 (\\rho - 27 - \\text{scv} \\cdot y_3) - y_2",
+      "comment": "Shifted ρ → (ρ - 27 - scv·y₃) to center y₃ around 0"
+    },
+    {
+      "index": 3,
+      "outputType": "recurrent",
+      "tau": "10",
+      "latex": "\\text{scv} \\cdot y_1 y_2 - \\beta (y_3 + 27/\\text{scv})",
+      "comment": "Includes constant offset from coordinate shift"
+    }
+  ],
+  "constants": [
+    {
+      "name": "\\sigma",
+      "value": 10,
+      "description": "Prandtl number"
+    },
+    {
+      "name": "\\rho",
+      "value": 28,
+      "description": "Rayleigh number"
+    },
+    {
+      "name": "\\beta",
+      "value": 2.6667,
+      "display_value": "\\frac{8}{3}",
+      "description": "Geometric factor"
+    },
+    {
+      "name": "\\text{scv}",
+      "value": 200,
+      "description": "Scale factor for y₃ coordinate shift"
+    }
+  ],
+  "expected_behavior": {
+    "attractor_type": "strange_attractor",
+    "visits_both_wings": true,
+    "approximate_lyapunov_time": 1.0,
+    "typical_std": [
+      0.04,
+      0.05,
+      0.04
+    ]
+  },
+  "schema_version": 2,
+  "ports": [
+    {
+      "id": "rec1",
+      "label": "x̃1",
+      "role": "recurrent",
+      "x0": 0,
+      "aliases": []
+    },
+    {
+      "id": "rec2",
+      "label": "x̃2",
+      "role": "recurrent",
+      "x0": 0,
+      "aliases": []
+    },
+    {
+      "id": "rec3",
+      "label": "x̃3",
+      "role": "recurrent",
+      "x0": 0,
+      "aliases": []
+    }
+  ]
+}
