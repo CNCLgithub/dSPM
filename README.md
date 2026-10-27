@@ -1,4 +1,4 @@
-# dSPM-pong
+# dSPM
 
 Code for **"Hypothesis-Driven Identification of Neural Algorithms With Dynamical Structure-Preserving Manifolds"**
 (Calbick, Kim, Sohn & Yildirim).
@@ -9,7 +9,7 @@ The code builds dynamical Structure-Preserving Manifold (dSPM) reservoirs: recur
 
 ```
 scripts/
-  create-dspm-networks/     build, program and run the dSPM Pong reservoirs
+  create-dspm-networks/     build, program and run the dSPM reservoirs
     dspm-reservoir-matlab/  the dspm_reservoir package (decompile, program, close loop), GUI, tests
     dependencies/           Pong dynamics (12 equations) and the glue to the package
   dependencies/             ReservoirTanhB_dc, plus the original Kim & Bassett functions used by the parity check
