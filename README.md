@@ -71,8 +71,6 @@ Run `setup_paths` from the repository root before anything else. It adds `script
 
 ## Data
 
-Neural recordings, task-optimized RNN states and dSPM states are too large for GitHub and are distributed separately: <!-- TODO: DOI / link -->. Unpack the archive at the repository root so that `data/` and `hpc-outputs/` sit next to `scripts/`; [DATA.md](DATA.md) lists its contents.
-
 The DMFC recordings and task-optimized RNNs come from Rajalingham et al. (2022, 2025). Please cite those papers if you use them.
 
 ## Citation
