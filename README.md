@@ -34,7 +34,7 @@ DATA.md                     files in the data release and which script makes/rea
 |---|---|---|
 | Fig. 1, Supp. Figs. 4–5 (dynamical algorithm, primitives) | `create-dspm-networks/dependencies/define_pong_dynamics.m`, `create-dspm-networks/program_rnn.m` | `create-dspm-networks/run_pong_trial.m` |
 | Fig. 2A eigenspectrum, 2B participation ratio | `manifold-analysis/eigenspectrum.m`, `compute_pr_crossval.m` | same |
-| Supp. Fig. 7, Supp. Section 7 (noise floor in the dimensionality analyses: noise-matched dSPM, noise-corrected DMFC) | `manifold-analysis/supp_noise_floor_dimensionality.m` | same (writes `figures/supp_noise_floor_dimensionality.pdf`) |
+| Supp. Fig. 7, Supp. Section 7 (PR of dSPM with DMFC-matched noise) | `manifold-analysis/supp_pr_noise_and_onset.m` | same (panel A; `figures/figures-september-2026/pr-with-noise.png`) |
 | Fig. 2C–D early-epoch PC geometry / LDA | `eigenspectrum.m` (leaves the workspace `export_pca_data.m` needs) → `export_pca_data.m` (writes `pca_data.js`) → `lda_analysis.m` | `lda_plots.m` |
 | Fig. 3C ball-endpoint decoding | `decoding-analysis/ftp_decoding_pipeline.m` | `plot_ftp_decoding_formal.m` |
 | Fig. 3D future-trajectory decoding, Supp. Fig. 8 (CCC) | `decoding-analysis/mtp_decoding_pipeline.m` | `plot_mtp_decoding_formal.m` |
@@ -44,6 +44,8 @@ DATA.md                     files in the data release and which script makes/rea
 | Supp. Figs. 1–2, Supp. Section 2 (Lotka–Volterra) | `lotka-volterra-reservoir/create_LV_reservoirs.m`; 20-reservoir conservation numbers: `lv_hamiltonian_spread.m`; dependence on input scale and step: `lv_conservation_hamiltonian_sweep.m` | `create_LV_reservoirs.m` |
 | Methods "Spectral radius of the programmed adjacency", Supp. Fig. 3, Supp. Section 3 | `spectral-properties/analyze_spectral_distribution.m` (ρ(A<sub>p</sub>), value at r\* and r\*<sub>i</sub>), `analyze_spectral_trajectories.m` (leading eigenvalue along trials), `first_order_spectral_radius.m` (first-order program); one-reservoir walkthrough: `create-dspm-networks/test_spectral_properties.m` | `make_spectral_radius_figure.m` |
 | Supp. Fig. 6 animation | `figures/network_Trial_animation.m` | same |
+
+Not in the manuscript: `manifold-analysis/supp_noise_floor_dimensionality.m` extends Supp. Fig. 7 by removing an estimate of DMFC's noise floor, in the time-resolved PR and in the cumulative variance of the Fig. 2A eigenspectra, with a check across shuffle and normalization choices.
 
 ## Pipeline
 

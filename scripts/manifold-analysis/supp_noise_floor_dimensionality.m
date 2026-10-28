@@ -1,6 +1,10 @@
 %% supp_noise_floor_dimensionality.m
-%  Supplementary Fig. 7 / Supplementary Section 7: accounting for DMFC's noise
-%  floor in the dimensionality analyses (Fig. 2A-B). DMFC is condition-averaged
+%  Not in the manuscript: an extension of Supplementary Fig. 7 prepared for the
+%  review of Fig. 2A. Supplementary Fig. 7 itself is drawn by
+%  supp_pr_noise_and_onset.m; its curves are reproduced here in panel A.
+%
+%  Accounting for DMFC's noise floor in the dimensionality analyses (Fig. 2A-B).
+%  DMFC is condition-averaged
 %  and carries a noise floor the deterministic models do not. The gap between
 %  DMFC and dSPM is examined from both sides:
 %    adding noise to dSPM       DMFC-matched noise raises dSPM's PR to DMFC's  [S1]

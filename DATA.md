@@ -21,7 +21,7 @@ Files the scripts expect, at the paths they expect, relative to the repository r
 | `scripts/decoding-analysis/data/ballStates_states_normalized.mat` | | `preprocessing/generate_ballState_and_linearMap.m` | decoding pipelines |
 | `scripts/decoding-analysis/data/dspm_states_normalized_1000neurons.mat` | 1.4 GB | `preprocessing/dspm_run_state_normalization.m` | `svm_bounce_pipeline.m` (see below) |
 | `data/dspm_states_normalized_1000neurons.mat` | 2.0 GB | earlier normalization, no end-of-trial masking | `ftp_decoding_pipeline.m`, `bounce_subspace_ftp_decoding_pipeline.m`, and `mtp_decoding_pipeline.m` via the workspace (see below) |
-| `scripts/manifold-analysis/data-pca/*.mat` (4 files) | 2.1 GB | `manifold-analysis/preprocess_for_PCA.m` | `eigenspectrum.m`, `supp_noise_floor_dimensionality.m` |
+| `scripts/manifold-analysis/data-pca/*.mat` (4 files) | 2.1 GB | `manifold-analysis/preprocess_for_PCA.m` | `eigenspectrum.m`, `supp_pr_noise_and_onset.m`, `supp_noise_floor_dimensionality.m` |
 | `scripts/network-data/ballStates_states_manifold_timezscore.mat` | 72 KB | `preprocessing/preprocess_brain_rnn_ballState_manifold.m` (saved as `ballStates_manifold.mat`) | `manifold-analysis/export_pca_data.m` |
 | `scripts/manifold-analysis/pca_data.js` (in the repository) | 8 MB | `export_pca_data.m` | `lda_analysis.m` |
 | `hpc-outputs/programmed-networks/<run>/post-hoc/time-organized-states/all-network-states.mat` | 2.0 GB | | `preprocess_for_PCA.m` |
